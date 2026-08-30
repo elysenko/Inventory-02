@@ -3,6 +3,8 @@
 # {{IMAGE_NAME}} is a placeholder substituted by the deploy agent at build time.
 framework: angular
 projectName: frontend
+buildDir: frontend
+dockerfile: Dockerfile
 outputDir: dist/frontend/browser
 baseHref: "/{{IMAGE_NAME}}/"
 port: 80
