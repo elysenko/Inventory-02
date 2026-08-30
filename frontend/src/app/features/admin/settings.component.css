@@ -1,0 +1,10 @@
+.mb { margin-bottom: var(--space-4); }
+.svc-head { justify-content: space-between; align-items: flex-start; }
+.svc-head h2 { margin: 0 0 var(--space-1); font-size: var(--text-lg); }
+.svc-desc { margin: 0; font-size: var(--text-sm); color: var(--color-text-muted); max-width: 62ch; }
+.hint code { font-family: var(--font-mono); }
+.warn { color: var(--color-warn-600); font-weight: var(--weight-semibold); }
+
+@media (max-width: 640px) {
+  .modal-foot .btn { width: 100%; }
+}

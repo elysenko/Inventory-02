@@ -1,0 +1,143 @@
+<div class="page">
+  <a class="back" routerLink="/items">‹ Back to catalog</a>
+
+  @if (item(); as it) {
+    <div class="page-head">
+      <div>
+        <span class="sku">{{ it.sku }}</span>
+        <h1>{{ it.name }}</h1>
+        <p class="sub">{{ it.description || 'No description recorded.' }}</p>
+      </div>
+      <div class="row">
+        <a class="btn btn-primary" [routerLink]="['/movements/new']" [queryParams]="{ itemId: it.id, type: 'IN' }">Record movement</a>
+        @if (auth.isManager()) {
+          <button type="button" class="btn btn-secondary" (click)="openEdit()">Edit</button>
+          <button type="button" class="btn btn-ghost danger" (click)="remove()">Delete</button>
+        }
+      </div>
+    </div>
+
+    @if (deleteError()) {
+      <div class="alert alert-error mb" role="alert">{{ deleteError() }}</div>
+    }
+
+    <div class="stats">
+      <div class="stat">
+        <span class="stat-label">On hand</span>
+        <strong class="stat-value">{{ it.totalQty | number }} <em>{{ it.unit }}</em></strong>
+      </div>
+      <div class="stat">
+        <span class="stat-label">Reorder point</span>
+        <strong class="stat-value">{{ it.reorderAt | number }}</strong>
+      </div>
+      <div class="stat">
+        <span class="stat-label">Status</span>
+        <strong class="stat-value">
+          @if (isLow()) {
+            <span class="badge badge-low">Low · {{ shortfall() | number }} short</span>
+          } @else {
+            <span class="badge badge-ok">In stock</span>
+          }
+        </strong>
+      </div>
+      <div class="stat">
+        <span class="stat-label">Locations holding stock</span>
+        <strong class="stat-value">{{ levels().length }}</strong>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head tabs" role="tablist">
+        <button type="button" class="tab-btn" [class.active]="panel() === 'locations'"
+                (click)="setPanel('locations')" role="tab" [attr.aria-selected]="panel() === 'locations'">
+          Stock by location
+        </button>
+        <button type="button" class="tab-btn" [class.active]="panel() === 'history'"
+                (click)="setPanel('history')" role="tab" [attr.aria-selected]="panel() === 'history'">
+          Recent movements
+        </button>
+      </div>
+
+      @if (panel() === 'history') {
+        @if (movements().length) {
+          <div class="table-wrap">
+            <table class="data">
+              <thead><tr><th>Type</th><th>From → To</th><th class="num">Qty</th><th>By</th><th>Note</th></tr></thead>
+              <tbody>
+                @for (m of movements(); track m.id) {
+                  <tr>
+                    <td>
+                      <span class="badge" [class.badge-in]="m.type === 'IN'"
+                            [class.badge-out]="m.type === 'OUT'"
+                            [class.badge-transfer]="m.type === 'TRANSFER'">{{ m.type }}</span>
+                    </td>
+                    <td>{{ m.fromLocName || '—' }} → {{ m.toLocName || '—' }}</td>
+                    <td class="num">{{ m.qty | number }}</td>
+                    <td>{{ m.userName }}</td>
+                    <td class="note">{{ m.note || '—' }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        } @else {
+          <div class="empty">
+            <span class="glyph" aria-hidden="true">☰</span>
+            <h3>No movements yet</h3>
+            <p>Nothing has been received, issued or transferred for this item.</p>
+          </div>
+        }
+      } @else {
+        @if (levels().length) {
+          <div class="table-wrap">
+            <table class="data">
+              <thead><tr><th>Location</th><th>Zone</th><th class="num">Qty</th><th class="share-col">Share</th><th></th></tr></thead>
+              <tbody>
+                @for (level of levels(); track level.id) {
+                  <tr>
+                    <td><strong>{{ level.locationName }}</strong></td>
+                    <td class="muted">{{ level.zone }}</td>
+                    <td class="num">{{ level.qty | number }}</td>
+                    <td class="share-col">
+                      <span class="bar"><span class="bar-fill" [style.width.%]="share(level.qty)"></span></span>
+                      <span class="share-pct">{{ share(level.qty) }}%</span>
+                    </td>
+                    <td class="num">
+                      <a class="btn btn-ghost btn-row" [routerLink]="['/movements/new']"
+                         [queryParams]="{ itemId: it.id, type: 'TRANSFER' }">Transfer</a>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+              <tfoot>
+                <tr><td colspan="2"><strong>Total across locations</strong></td>
+                    <td class="num"><strong>{{ levelSum() | number }}</strong></td>
+                    <td colspan="2" class="muted small">matches on-hand total</td></tr>
+              </tfoot>
+            </table>
+          </div>
+        } @else {
+          <div class="empty">
+            <span class="glyph" aria-hidden="true">⌗</span>
+            <h3>No stock in any location</h3>
+            <p>Receive stock against a location to start tracking this item.</p>
+            <a class="btn btn-primary" [routerLink]="['/movements/new']" [queryParams]="{ itemId: it.id, type: 'IN' }">Receive stock</a>
+          </div>
+        }
+      }
+    </div>
+  } @else {
+    <div class="card">
+      <div class="empty">
+        <span class="glyph" aria-hidden="true">▦</span>
+        <h3>Item not found</h3>
+        <p>This item may have been removed from the catalog.</p>
+        <a class="btn btn-secondary" routerLink="/items">Back to catalog</a>
+      </div>
+    </div>
+  }
+</div>
+
+@if (modal() === 'edit' && auth.isManager() && item()) {
+  <app-item-form mode="edit" [item]="item()" (save)="saveEdit($event)" (cancel)="closeModal()" />
+}

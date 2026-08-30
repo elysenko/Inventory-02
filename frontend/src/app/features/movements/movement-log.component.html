@@ -1,0 +1,92 @@
+<div class="page">
+  <div class="page-head">
+    <div>
+      <h1>Movement log</h1>
+      <p class="sub">Complete audit trail — every receipt, issue and transfer ever recorded.</p>
+    </div>
+    <a class="btn btn-primary" routerLink="/movements/new">＋ New movement</a>
+  </div>
+
+  <div class="card">
+    <div class="card-head filters">
+      <div class="field">
+        <label for="f-item">Item</label>
+        <select id="f-item" [ngModel]="itemFilter()" (ngModelChange)="setFilter('itemId', $event)">
+          <option value="">All items</option>
+          @for (i of items(); track i.id) { <option [value]="i.id">{{ i.sku }} — {{ i.name }}</option> }
+        </select>
+      </div>
+      <div class="field">
+        <label for="f-type">Type</label>
+        <select id="f-type" [ngModel]="typeFilter()" (ngModelChange)="setFilter('type', $event)">
+          <option value="">All types</option>
+          @for (t of types; track t) { <option [value]="t">{{ t }}</option> }
+        </select>
+      </div>
+      <div class="field">
+        <label for="f-from">From date</label>
+        <input id="f-from" type="date" [ngModel]="from()" (ngModelChange)="setFilter('from', $event)" />
+      </div>
+      <div class="field">
+        <label for="f-to">To date</label>
+        <input id="f-to" type="date" [ngModel]="to()" (ngModelChange)="setFilter('to', $event)" />
+      </div>
+      @if (hasFilters()) {
+        <button type="button" class="btn btn-ghost clear" (click)="clearFilters()">Clear filters</button>
+      }
+    </div>
+
+    @if (pageRows().length) {
+      <div class="table-wrap">
+        <table class="data">
+          <thead>
+            <tr><th>When</th><th>Type</th><th>Item</th><th>From → To</th><th class="num">Qty</th><th>By</th><th>Note</th></tr>
+          </thead>
+          <tbody>
+            @for (m of pageRows(); track m.id) {
+              <tr>
+                <td class="when">{{ m.createdAt | date: 'd MMM, HH:mm' }}</td>
+                <td>
+                  <span class="badge" [class.badge-in]="m.type === 'IN'"
+                        [class.badge-out]="m.type === 'OUT'"
+                        [class.badge-transfer]="m.type === 'TRANSFER'">{{ m.type }}</span>
+                </td>
+                <td>
+                  <a class="link" [routerLink]="['/items', m.itemId]">{{ m.itemName }}</a>
+                  <span class="sku block">{{ m.itemSku }}</span>
+                </td>
+                <td>{{ m.fromLocName || '—' }} → {{ m.toLocName || '—' }}</td>
+                <td class="num">{{ m.qty | number }}</td>
+                <td>{{ m.userName }}</td>
+                <td class="note">{{ m.note || '—' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <div class="pager">
+        <span class="pager-info">
+          Showing {{ rangeStart() | number }}–{{ rangeEnd() | number }} of {{ filtered().length | number }}
+        </span>
+        <div class="pager-actions">
+          <button type="button" class="btn btn-secondary" [disabled]="page() <= 1" (click)="goToPage(page() - 1)">Previous</button>
+          <span class="pager-page">Page {{ page() }} of {{ totalPages() }}</span>
+          <button type="button" class="btn btn-secondary" [disabled]="page() >= totalPages()" (click)="goToPage(page() + 1)">Next</button>
+        </div>
+      </div>
+    } @else {
+      <div class="empty">
+        <span class="glyph" aria-hidden="true">☰</span>
+        <h3>No movements match</h3>
+        @if (hasFilters()) {
+          <p>No movements match the current filters. Try widening the date range or clearing the item filter.</p>
+          <button type="button" class="btn btn-secondary" (click)="clearFilters()">Clear filters</button>
+        } @else {
+          <p>Nothing has been recorded yet. The log fills up as stock moves.</p>
+          <a class="btn btn-primary" routerLink="/movements/new">Record the first movement</a>
+        }
+      </div>
+    }
+  </div>
+</div>

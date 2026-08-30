@@ -1,0 +1,93 @@
+<!-- data-testid="app-ready" is the readiness landmark: it enters the DOM only after
+     Angular bootstraps this root component. Keep it here. -->
+<div class="shell" [class.auth-mode]="isAuthRoute()" data-testid="app-ready">
+  <header class="topbar">
+    <a class="brand" routerLink="/items">
+      <span class="brand-mark" aria-hidden="true">SR</span>
+      <span class="brand-name">StockRoom</span>
+    </a>
+
+    @if (!isAuthRoute()) {
+      <div class="topbar-actions">
+        <a class="btn btn-primary new-move" routerLink="/movements/new">
+          <span aria-hidden="true">＋</span> New movement
+        </a>
+        <div class="account">
+          <button type="button" class="avatar" (click)="toggleAccount()"
+                  [attr.aria-expanded]="accountOpen()" aria-label="Account menu">
+            {{ initials() }}
+          </button>
+          @if (accountOpen()) {
+            <div class="menu">
+              <div class="menu-head">
+                <strong>{{ auth.currentUser()?.name }}</strong>
+                <span class="menu-mail">{{ auth.currentUser()?.email }}</span>
+                <span class="badge badge-neutral">{{ auth.currentUser()?.role }}</span>
+              </div>
+              <p class="menu-label">Preview as</p>
+              <button type="button" class="menu-item" (click)="switchRole('ADMIN')">Manager / admin</button>
+              <button type="button" class="menu-item" (click)="switchRole('CLERK')">Clerk</button>
+              <button type="button" class="menu-item danger" (click)="logout()">Sign out</button>
+            </div>
+          }
+        </div>
+      </div>
+    }
+  </header>
+
+  <div class="body">
+    @if (!isAuthRoute()) {
+      <aside class="sidebar">
+        <nav>
+          @for (item of nav(); track item.path) {
+            <a class="nav-item" [routerLink]="item.path" routerLinkActive="active"
+               [routerLinkActiveOptions]="{ exact: item.path === '/movements' }">
+              <span class="nav-icon" aria-hidden="true">{{ item.icon }}</span>
+              <span>{{ item.label }}</span>
+            </a>
+          }
+        </nav>
+        <div class="sidebar-foot">
+          <p class="who">Signed in as <strong>{{ auth.currentUser()?.name }}</strong></p>
+          <span class="badge badge-neutral">{{ auth.currentUser()?.role }}</span>
+        </div>
+      </aside>
+    }
+
+    <main class="content"><router-outlet /></main>
+  </div>
+
+  @if (!isAuthRoute()) {
+    <nav class="tabbar">
+      @for (item of primaryNav(); track item.path) {
+        <a class="tab" [routerLink]="item.path" routerLinkActive="active"
+           [routerLinkActiveOptions]="{ exact: item.path === '/movements' }">
+          <span class="tab-icon" aria-hidden="true">{{ item.icon }}</span>
+          <span class="tab-label">{{ item.short }}</span>
+        </a>
+      }
+      @if (overflowNav().length) {
+        <button type="button" class="tab" [class.active]="moreOpen()" (click)="toggleMore()">
+          <span class="tab-icon" aria-hidden="true">⋯</span>
+          <span class="tab-label">More</span>
+        </button>
+      }
+    </nav>
+
+    @if (moreOpen()) {
+      <div class="sheet-backdrop" (click)="toggleMore()">
+        <div class="sheet" (click)="$event.stopPropagation()">
+          <div class="sheet-grip" aria-hidden="true"></div>
+          @for (item of overflowNav(); track item.path) {
+            <a class="sheet-item" [routerLink]="item.path">
+              <span aria-hidden="true">{{ item.icon }}</span> {{ item.label }}
+            </a>
+          }
+          <button type="button" class="sheet-item" (click)="switchRole('CLERK')">◑ Preview as clerk</button>
+          <button type="button" class="sheet-item" (click)="switchRole('ADMIN')">◐ Preview as manager</button>
+          <button type="button" class="sheet-item danger" (click)="logout()">⏻ Sign out</button>
+        </div>
+      </div>
+    }
+  }
+</div>

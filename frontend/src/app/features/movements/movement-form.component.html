@@ -1,0 +1,111 @@
+<div class="page narrow">
+  <div class="page-head">
+    <div>
+      <h1>Record movement</h1>
+      <p class="sub">Every movement updates balances and writes an audit entry in the same step.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-body">
+      <div class="field">
+        <label id="type-label">Movement type</label>
+        <div class="type-picker" role="radiogroup" aria-labelledby="type-label">
+          <button type="button" class="type" [class.active]="type() === 'IN'" (click)="setType('IN')"
+                  role="radio" [attr.aria-checked]="type() === 'IN'">
+            <span class="type-icon in" aria-hidden="true">↓</span>
+            <strong>Receive in</strong>
+            <span class="type-hint">Stock arrives into a location</span>
+          </button>
+          <button type="button" class="type" [class.active]="type() === 'OUT'" (click)="setType('OUT')"
+                  role="radio" [attr.aria-checked]="type() === 'OUT'">
+            <span class="type-icon out" aria-hidden="true">↑</span>
+            <strong>Issue out</strong>
+            <span class="type-hint">Stock leaves a location</span>
+          </button>
+          <button type="button" class="type" [class.active]="type() === 'TRANSFER'" (click)="setType('TRANSFER')"
+                  role="radio" [attr.aria-checked]="type() === 'TRANSFER'">
+            <span class="type-icon transfer" aria-hidden="true">⇄</span>
+            <strong>Transfer</strong>
+            <span class="type-hint">Move between two locations</span>
+          </button>
+        </div>
+      </div>
+
+      @if (serverError()) {
+        <div class="alert alert-error mt" role="alert">{{ serverError() }}</div>
+      }
+      @if (success()) {
+        <div class="alert alert-success mt" role="status">
+          {{ success() }}
+          <a class="inline-link" routerLink="/movements">View log</a>
+        </div>
+      }
+
+      <form class="form-grid mt" (ngSubmit)="submit()">
+        <div class="field span-2">
+          <label for="item">Item</label>
+          <select id="item" [class.invalid]="submitted() && !itemId()"
+                  [ngModel]="itemId()" (ngModelChange)="itemId.set($event)" name="item">
+            <option value="">Select an item…</option>
+            @for (i of items(); track i.id) {
+              <option [value]="i.id">{{ i.sku }} — {{ i.name }}</option>
+            }
+          </select>
+          @if (submitted() && !itemId()) { <span class="error-text">Choose the item being moved.</span> }
+          @if (items().length === 0) { <span class="hint">No items in the catalog yet.</span> }
+        </div>
+
+        @if (needsFrom()) {
+          <div class="field">
+            <label for="from">From location</label>
+            <select id="from" name="from" [class.invalid]="submitted() && !fromLocId()"
+                    [ngModel]="fromLocId()" (ngModelChange)="fromLocId.set($event)">
+              <option value="">Select source…</option>
+              @for (l of locations(); track l.id) {
+                <option [value]="l.id">{{ l.name }} · {{ l.zone }}</option>
+              }
+            </select>
+            @if (submitted() && !fromLocId()) { <span class="error-text">A source location is required.</span> }
+            @if (available() !== null) {
+              <span class="hint">{{ available() | number }} {{ selectedItem()?.unit }} on hand here.</span>
+            }
+          </div>
+        }
+
+        @if (needsTo()) {
+          <div class="field">
+            <label for="to">To location</label>
+            <select id="to" name="to" [class.invalid]="submitted() && !toLocId()"
+                    [ngModel]="toLocId()" (ngModelChange)="toLocId.set($event)">
+              <option value="">Select destination…</option>
+              @for (l of locations(); track l.id) {
+                <option [value]="l.id">{{ l.name }} · {{ l.zone }}</option>
+              }
+            </select>
+            @if (submitted() && !toLocId()) { <span class="error-text">A destination location is required.</span> }
+          </div>
+        }
+
+        <div class="field">
+          <label for="qty">Quantity</label>
+          <input id="qty" name="qty" type="number" min="1" step="1" inputmode="numeric" placeholder="0"
+                 [class.invalid]="submitted() && !qty()"
+                 [ngModel]="qty()" (ngModelChange)="qty.set($event)" />
+          @if (submitted() && !qty()) { <span class="error-text">Enter a quantity of at least 1.</span> }
+        </div>
+
+        <div class="field span-2">
+          <label for="note">Note <span class="optional">(optional)</span></label>
+          <textarea id="note" name="note" placeholder="Reference, order number or reason"
+                    [ngModel]="note()" (ngModelChange)="note.set($event)"></textarea>
+        </div>
+
+        <div class="actions span-2">
+          <a class="btn btn-secondary" routerLink="/items">Cancel</a>
+          <button type="submit" class="btn btn-primary">Record movement</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

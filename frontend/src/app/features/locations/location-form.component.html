@@ -1,0 +1,40 @@
+<div class="modal-backdrop" (click)="cancel.emit()">
+  <div class="modal" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+    <div class="modal-head">
+      <h2>{{ mode === 'create' ? 'New location' : 'Edit location' }}</h2>
+      <button type="button" class="btn btn-ghost" (click)="cancel.emit()" aria-label="Close">✕</button>
+    </div>
+
+    <div class="modal-body">
+      @if (serverError) {
+        <div class="alert alert-error" role="alert">{{ serverError }}</div>
+      }
+
+      <div class="form-grid">
+        <div class="field span-2">
+          <label for="lname">Location name</label>
+          <input id="lname" type="text" placeholder="Zone D"
+                 [class.invalid]="submitted() && !name().trim()"
+                 [ngModel]="name()" (ngModelChange)="name.set($event)" />
+          @if (submitted() && !name().trim()) { <span class="error-text">Name is required.</span> }
+        </div>
+
+        <div class="field span-2">
+          <label for="lzone">Zone / purpose</label>
+          <input id="lzone" type="text" placeholder="Receiving, Main racking, Dispatch…"
+                 [class.invalid]="submitted() && !zone().trim()"
+                 [ngModel]="zone()" (ngModelChange)="zone.set($event)" />
+          @if (submitted() && !zone().trim()) { <span class="error-text">Zone is required.</span> }
+          <span class="hint">Shown alongside the location wherever stock is broken down.</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-foot">
+      <button type="button" class="btn btn-secondary" (click)="cancel.emit()">Cancel</button>
+      <button type="button" class="btn btn-primary" (click)="submit()">
+        {{ mode === 'create' ? 'Create location' : 'Save changes' }}
+      </button>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,95 @@
+/* StockRoom design tokens — the single source of truth for every visual value.
+   Components must reference these via var(--token-name); never raw hex. */
+:root {
+  /* Surfaces — industrial slate */
+  --color-bg: #f4f6f9;
+  --color-surface: #ffffff;
+  --color-surface-alt: #f9fafb;
+  --color-surface-sunken: #eef1f6;
+  --color-overlay: rgba(11, 26, 43, 0.55);
+
+  /* Brand — deep navy shell */
+  --color-brand-900: #0b1a2b;
+  --color-brand-800: #12263c;
+  --color-brand-700: #1b3552;
+  --color-brand-600: #24466a;
+  --color-brand-100: #dbe6f3;
+
+  /* Accent — signal amber (primary action) */
+  --color-accent-600: #b45309;
+  --color-accent-500: #d97706;
+  --color-accent-400: #f59e0b;
+  --color-accent-100: #fef3c7;
+
+  /* Text */
+  --color-text: #0f1c2e;
+  --color-text-muted: #5b6b80;
+  --color-text-subtle: #8494a8;
+  --color-text-inverse: #f8fafc;
+
+  /* Borders */
+  --color-border: #dde3ec;
+  --color-border-strong: #c3cddb;
+  --color-focus: #2563eb;
+
+  /* Status */
+  --color-success-600: #15803d;
+  --color-success-100: #dcfce7;
+  --color-warn-600: #b45309;
+  --color-warn-100: #fef3c7;
+  --color-danger-600: #b91c1c;
+  --color-danger-500: #dc2626;
+  --color-danger-100: #fee2e2;
+  --color-info-600: #1d4ed8;
+  --color-info-100: #dbeafe;
+  --color-neutral-600: #475569;
+  --color-neutral-100: #e2e8f0;
+
+  /* Movement type hues */
+  --color-move-in: #15803d;
+  --color-move-in-bg: #dcfce7;
+  --color-move-out: #b91c1c;
+  --color-move-out-bg: #fee2e2;
+  --color-move-transfer: #1d4ed8;
+  --color-move-transfer-bg: #dbeafe;
+
+  /* Spacing scale */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 3rem;
+
+  /* Radii */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-pill: 999px;
+
+  /* Typography */
+  --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "SFMono-Regular", ui-monospace, "Roboto Mono", monospace;
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.375rem;
+  --text-2xl: 1.75rem;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+
+  /* Elevation */
+  --shadow-sm: 0 1px 2px rgba(15, 28, 46, 0.06);
+  --shadow-md: 0 4px 12px rgba(15, 28, 46, 0.08);
+  --shadow-lg: 0 16px 40px rgba(15, 28, 46, 0.18);
+
+  /* Layout */
+  --sidebar-width: 244px;
+  --header-height: 60px;
+  --tabbar-height: 62px;
+  --content-max: 1180px;
+  --tap-target: 44px;
+}

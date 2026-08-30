@@ -1,0 +1,61 @@
+<div class="auth-wrap">
+  <aside class="auth-aside">
+    <h2>Join the floor team on StockRoom.</h2>
+    <p>New accounts start with clerk access — record movements and browse the catalog straight away.</p>
+    <div class="auth-points">
+      <div class="auth-point"><span class="dot">✓</span><span>Record stock in, out and between zones.</span></div>
+      <div class="auth-point"><span class="dot">✓</span><span>Check on-hand balances per location.</span></div>
+      <div class="auth-point"><span class="dot">✓</span><span>A manager can raise your access later.</span></div>
+    </div>
+  </aside>
+
+  <main class="auth-main">
+    <div class="auth-card">
+      <h1>Create account</h1>
+      <p class="lede">It takes about thirty seconds.</p>
+
+      @if (error()) {
+        <div class="alert alert-error" role="alert">{{ error() }}</div>
+      }
+
+      <form class="auth-form" (ngSubmit)="submit()">
+        <div class="field">
+          <label for="name">Full name</label>
+          <input id="name" name="name" type="text" autocomplete="name" placeholder="Sam Okafor"
+                 [class.invalid]="submitted() && !name()"
+                 [ngModel]="name()" (ngModelChange)="name.set($event)" />
+        </div>
+
+        <div class="field">
+          <label for="email">Email</label>
+          <input id="email" name="email" type="email" autocomplete="username" placeholder="you@warehouse.co"
+                 [class.invalid]="submitted() && !email()"
+                 [ngModel]="email()" (ngModelChange)="email.set($event)" />
+        </div>
+
+        <div class="field">
+          <label for="password">Password</label>
+          <input id="password" name="password" type="password" autocomplete="new-password" placeholder="At least 8 characters"
+                 [class.invalid]="submitted() && !password()"
+                 [ngModel]="password()" (ngModelChange)="password.set($event)" />
+          <span class="hint">Minimum 8 characters.</span>
+        </div>
+
+        <div class="field">
+          <label for="confirm">Confirm password</label>
+          <input id="confirm" name="confirm" type="password" autocomplete="new-password" placeholder="Repeat your password"
+                 [class.invalid]="submitted() && !confirm()"
+                 [ngModel]="confirm()" (ngModelChange)="confirm.set($event)" />
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-block">Create account</button>
+      </form>
+
+      <p class="auth-alt">Already registered? <a routerLink="/login">Sign in</a></p>
+
+      <div class="auth-demo">
+        <button type="button" (click)="demo()">Skip signup — Demo Mode</button>
+      </div>
+    </div>
+  </main>
+</div>

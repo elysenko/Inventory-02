@@ -1,0 +1,50 @@
+<div class="page">
+  <div class="page-head">
+    <div>
+      <h1>Locations</h1>
+      <p class="sub">{{ locations().length }} storage locations · {{ totalUnits() | number }} units held</p>
+    </div>
+    <button type="button" class="btn btn-primary" (click)="openCreate()">＋ New location</button>
+  </div>
+
+  @if (deleteError()) {
+    <div class="alert alert-error mb" role="alert">{{ deleteError() }}</div>
+  }
+
+  @if (locations().length) {
+    <ul class="grid">
+      @for (loc of locations(); track loc.id) {
+        <li class="card loc">
+          <div class="loc-head">
+            <div>
+              <h3>{{ loc.name }}</h3>
+              <span class="badge badge-neutral">{{ loc.zone }}</span>
+            </div>
+            <span class="loc-qty">{{ loc.totalQty | number }}<em>units</em></span>
+          </div>
+          <p class="loc-meta">{{ loc.itemCount }} distinct {{ loc.itemCount === 1 ? 'item' : 'items' }} stored here</p>
+          <div class="loc-actions">
+            <button type="button" class="btn btn-secondary" (click)="openEdit(loc)">Edit</button>
+            <button type="button" class="btn btn-ghost danger" (click)="remove(loc)">Delete</button>
+          </div>
+        </li>
+      }
+    </ul>
+  } @else {
+    <div class="card">
+      <div class="empty">
+        <span class="glyph" aria-hidden="true">⌗</span>
+        <h3>No locations yet</h3>
+        <p>Add a storage location before recording any stock movements.</p>
+        <button type="button" class="btn btn-primary" (click)="openCreate()">＋ New location</button>
+      </div>
+    </div>
+  }
+</div>
+
+@if (modal() === 'create' || modal() === 'edit') {
+  <app-location-form [mode]="modal() === 'edit' ? 'edit' : 'create'"
+                     [location]="modal() === 'edit' ? editing() : null"
+                     [serverError]="formError()"
+                     (save)="save($event)" (cancel)="closeModal()" />
+}

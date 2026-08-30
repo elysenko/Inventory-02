@@ -1,0 +1,110 @@
+<div class="page">
+  <div class="page-head">
+    <div>
+      <h1>Item catalog</h1>
+      <p class="sub">{{ items().length }} items · {{ totalUnits() | number }} units on hand · {{ lowCount() }} at or below reorder point</p>
+    </div>
+    @if (auth.isManager()) {
+      <button type="button" class="btn btn-primary" (click)="openCreate()">＋ New item</button>
+    }
+  </div>
+
+  <div class="card">
+    <div class="card-head toolbar">
+      <div class="search">
+        <span class="search-icon" aria-hidden="true">⌕</span>
+        <label class="sr-only" for="q">Search items</label>
+        <input id="q" type="search" placeholder="Search by SKU or name"
+               [ngModel]="query()" (ngModelChange)="setQuery($event)" />
+      </div>
+      <div class="sort">
+        <label for="sort">Sort</label>
+        <select id="sort" [ngModel]="sort()" (ngModelChange)="setSort($event)">
+          <option value="sku">SKU</option>
+          <option value="name">Name</option>
+          <option value="qty">On hand (high first)</option>
+          <option value="reorder">Reorder point</option>
+        </select>
+      </div>
+    </div>
+
+    @if (visible().length) {
+      <div class="table-wrap desktop-only">
+        <table class="data">
+          <thead>
+            <tr>
+              <th>SKU</th><th>Item</th><th>Unit</th>
+              <th class="num">Reorder at</th><th class="num">On hand</th><th>Status</th><th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of visible(); track item.id) {
+              <tr>
+                <td class="sku">{{ item.sku }}</td>
+                <td>
+                  <a class="link" [routerLink]="['/items', item.id]">{{ item.name }}</a>
+                  <span class="desc">{{ item.description }}</span>
+                </td>
+                <td>{{ item.unit }}</td>
+                <td class="num">{{ item.reorderAt | number }}</td>
+                <td class="num strong">{{ item.totalQty | number }}</td>
+                <td>
+                  @if (isLow(item)) {
+                    <span class="badge badge-low">Low</span>
+                  } @else {
+                    <span class="badge badge-ok">In stock</span>
+                  }
+                </td>
+                <td class="num">
+                  <a class="btn btn-ghost btn-row" [routerLink]="['/movements/new']"
+                     [queryParams]="{ itemId: item.id, type: 'OUT' }">Move</a>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <ul class="mobile-only cards">
+        @for (item of visible(); track item.id) {
+          <li>
+            <a class="item-card" [routerLink]="['/items', item.id]">
+              <div class="item-card-top">
+                <span class="sku">{{ item.sku }}</span>
+                @if (isLow(item)) {
+                  <span class="badge badge-low">Low</span>
+                } @else {
+                  <span class="badge badge-ok">In stock</span>
+                }
+              </div>
+              <strong>{{ item.name }}</strong>
+              <div class="item-card-foot">
+                <span><b>{{ item.totalQty | number }}</b> {{ item.unit }} on hand</span>
+                <span class="muted">reorder at {{ item.reorderAt | number }}</span>
+              </div>
+            </a>
+          </li>
+        }
+      </ul>
+    } @else {
+      <div class="empty">
+        <span class="glyph" aria-hidden="true">▦</span>
+        <h3>No items match</h3>
+        @if (query()) {
+          <p>Nothing matches “{{ query() }}”. Try a different SKU or name.</p>
+          <button type="button" class="btn btn-secondary" (click)="setQuery('')">Clear search</button>
+        } @else {
+          <p>The catalog is empty. Add your first item to start tracking stock.</p>
+          @if (auth.isManager()) {
+            <button type="button" class="btn btn-primary" (click)="openCreate()">＋ New item</button>
+          }
+        }
+      </div>
+    }
+  </div>
+</div>
+
+@if (modal() === 'create' && auth.isManager()) {
+  <app-item-form mode="create" [item]="null" [serverError]="formError()"
+                 (save)="create($event)" (cancel)="closeModal()" />
+}

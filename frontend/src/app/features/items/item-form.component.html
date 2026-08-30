@@ -1,0 +1,60 @@
+<div class="modal-backdrop" (click)="cancel.emit()">
+  <div class="modal" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+    <div class="modal-head">
+      <h2>{{ mode === 'create' ? 'New item' : 'Edit item' }}</h2>
+      <button type="button" class="btn btn-ghost" (click)="cancel.emit()" aria-label="Close">✕</button>
+    </div>
+
+    <div class="modal-body">
+      @if (serverError) {
+        <div class="alert alert-error" role="alert">{{ serverError }}</div>
+      }
+
+      <div class="form-grid">
+        <div class="field">
+          <label for="sku">SKU</label>
+          <input id="sku" type="text" placeholder="SKU-009"
+                 [class.invalid]="submitted() && !sku().trim()"
+                 [ngModel]="sku()" (ngModelChange)="sku.set($event)" />
+          @if (submitted() && !sku().trim()) { <span class="error-text">SKU is required.</span> }
+          <span class="hint">Must be unique across the catalog.</span>
+        </div>
+
+        <div class="field">
+          <label for="unit">Unit</label>
+          <select id="unit" [ngModel]="unit()" (ngModelChange)="unit.set($event)">
+            @for (u of units; track u) { <option [value]="u">{{ u }}</option> }
+          </select>
+        </div>
+
+        <div class="field span-2">
+          <label for="iname">Name</label>
+          <input id="iname" type="text" placeholder="Steel bracket M8"
+                 [class.invalid]="submitted() && !name().trim()"
+                 [ngModel]="name()" (ngModelChange)="name.set($event)" />
+          @if (submitted() && !name().trim()) { <span class="error-text">Name is required.</span> }
+        </div>
+
+        <div class="field">
+          <label for="reorder">Reorder point</label>
+          <input id="reorder" type="number" min="0" inputmode="numeric"
+                 [ngModel]="reorderAt()" (ngModelChange)="reorderAt.set($event)" />
+          <span class="hint">Flagged when on-hand falls to or below this.</span>
+        </div>
+
+        <div class="field span-2">
+          <label for="desc">Description</label>
+          <textarea id="desc" placeholder="Optional notes about this item"
+                    [ngModel]="description()" (ngModelChange)="description.set($event)"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-foot">
+      <button type="button" class="btn btn-secondary" (click)="cancel.emit()">Cancel</button>
+      <button type="button" class="btn btn-primary" (click)="submit()">
+        {{ mode === 'create' ? 'Create item' : 'Save changes' }}
+      </button>
+    </div>
+  </div>
+</div>

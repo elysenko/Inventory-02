@@ -1,0 +1,30 @@
+.back { display: inline-flex; align-items: center; min-height: var(--tap-target); font-size: var(--text-sm); color: var(--color-text-muted); }
+.back:hover { color: var(--color-text); }
+.mb { margin-bottom: var(--space-4); }
+.danger { color: var(--color-danger-600); }
+
+.stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: var(--space-4); margin-bottom: var(--space-5); }
+.stat { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: var(--space-4); box-shadow: var(--shadow-sm); }
+.stat-label { display: block; font-size: var(--text-xs); text-transform: uppercase; letter-spacing: .06em; color: var(--color-text-muted); margin-bottom: var(--space-2); }
+.stat-value { font-size: var(--text-xl); font-weight: var(--weight-semibold); }
+.stat-value em { font-style: normal; font-size: var(--text-sm); color: var(--color-text-muted); }
+
+.tabs { gap: var(--space-1); padding: var(--space-2) var(--space-3); }
+.tab-btn { min-height: var(--tap-target); padding: 0 var(--space-4); border: 0; border-radius: var(--radius-md); background: transparent; font: inherit; font-size: var(--text-sm); font-weight: var(--weight-medium); color: var(--color-text-muted); cursor: pointer; }
+.tab-btn:hover { background: var(--color-surface-sunken); }
+.tab-btn.active { background: var(--color-brand-100); color: var(--color-brand-800); font-weight: var(--weight-semibold); }
+
+.bar { display: inline-block; width: 120px; height: 8px; border-radius: var(--radius-pill); background: var(--color-surface-sunken); overflow: hidden; vertical-align: middle; }
+.bar-fill { display: block; height: 100%; background: var(--color-accent-500); }
+.share-pct { margin-left: var(--space-2); font-size: var(--text-xs); color: var(--color-text-muted); }
+.muted { color: var(--color-text-muted); }
+.small { font-size: var(--text-xs); }
+.note { white-space: normal; max-width: 28ch; color: var(--color-text-muted); }
+.btn-row { min-height: 34px; padding: 0 var(--space-3); }
+table.data tfoot td { background: var(--color-surface-alt); border-top: 1px solid var(--color-border); }
+
+@media (max-width: 768px) {
+  .share-col { display: none; }
+  .page-head .row { width: 100%; }
+  .page-head .row .btn { flex: 1; }
+}

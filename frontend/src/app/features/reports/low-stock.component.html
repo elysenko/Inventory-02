@@ -1,0 +1,78 @@
+<div class="page">
+  <div class="page-head">
+    <div>
+      <h1>Low stock</h1>
+      <p class="sub">Items at or below their reorder point — {{ totalShortfall() | number }} units short in total.</p>
+    </div>
+    <div class="sort">
+      <label for="sort">Sort</label>
+      <select id="sort" [ngModel]="sort()" (ngModelChange)="setSort($event)">
+        <option value="shortfall">Largest shortfall</option>
+        <option value="qty">Lowest on hand</option>
+        <option value="sku">SKU</option>
+      </select>
+    </div>
+  </div>
+
+  @if (rows().length) {
+    <div class="summary">
+      <div class="summary-card">
+        <span class="summary-label">Items to reorder</span>
+        <strong>{{ rows().length }}</strong>
+      </div>
+      <div class="summary-card">
+        <span class="summary-label">Critical</span>
+        <strong class="danger">{{ critical() }}</strong>
+      </div>
+      <div class="summary-card">
+        <span class="summary-label">Total shortfall</span>
+        <strong>{{ totalShortfall() | number }}</strong>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="table-wrap">
+        <table class="data">
+          <thead>
+            <tr><th>SKU</th><th>Item</th><th class="num">On hand</th><th class="num">Reorder at</th>
+                <th class="num">Shortfall</th><th class="cover-col">Coverage</th><th></th></tr>
+          </thead>
+          <tbody>
+            @for (row of sorted(); track row.id) {
+              <tr>
+                <td class="sku">{{ row.sku }}</td>
+                <td>
+                  <a class="link" [routerLink]="['/items', row.id]">{{ row.name }}</a>
+                  @if (severity(row) === 'critical') { <span class="badge badge-low">Critical</span> }
+                  @else if (severity(row) === 'at') { <span class="badge badge-warn">At threshold</span> }
+                </td>
+                <td class="num">{{ row.totalQty | number }} <em>{{ row.unit }}</em></td>
+                <td class="num">{{ row.reorderAt | number }}</td>
+                <td class="num strong">{{ row.shortfall | number }}</td>
+                <td class="cover-col">
+                  <span class="bar">
+                    <span class="bar-fill" [class.crit]="severity(row) === 'critical'" [style.width.%]="coverage(row)"></span>
+                  </span>
+                  <span class="cover-pct">{{ coverage(row) }}%</span>
+                </td>
+                <td class="num">
+                  <a class="btn btn-ghost btn-row" [routerLink]="['/movements/new']"
+                     [queryParams]="{ itemId: row.id, type: 'IN' }">Receive</a>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  } @else {
+    <div class="card">
+      <div class="empty">
+        <span class="glyph" aria-hidden="true">✓</span>
+        <h3>Everything is above its reorder point</h3>
+        <p>No item has fallen to or below its threshold. Nothing needs reordering right now.</p>
+        <a class="btn btn-secondary" routerLink="/items">Back to catalog</a>
+      </div>
+    </div>
+  }
+</div>
