@@ -36,7 +36,15 @@
       }
     </div>
 
-    @if (pageRows().length) {
+    @if (error()) {
+      <div class="alert alert-error mb" role="alert">{{ error() }}</div>
+    }
+
+    @if (loading()) {
+      <div class="empty">
+        <p>Loading…</p>
+      </div>
+    } @else if (pageRows().length) {
       <div class="table-wrap">
         <table class="data">
           <thead>
@@ -67,7 +75,7 @@
 
       <div class="pager">
         <span class="pager-info">
-          Showing {{ rangeStart() | number }}–{{ rangeEnd() | number }} of {{ filtered().length | number }}
+          Showing {{ rangeStart() | number }}–{{ rangeEnd() | number }} of {{ total() | number }}
         </span>
         <div class="pager-actions">
           <button type="button" class="btn btn-secondary" [disabled]="page() <= 1" (click)="goToPage(page() - 1)">Previous</button>
@@ -75,7 +83,7 @@
           <button type="button" class="btn btn-secondary" [disabled]="page() >= totalPages()" (click)="goToPage(page() + 1)">Next</button>
         </div>
       </div>
-    } @else {
+    } @else if (!error()) {
       <div class="empty">
         <span class="glyph" aria-hidden="true">☰</span>
         <h3>No movements match</h3>

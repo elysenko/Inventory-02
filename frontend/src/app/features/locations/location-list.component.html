@@ -11,7 +11,15 @@
     <div class="alert alert-error mb" role="alert">{{ deleteError() }}</div>
   }
 
-  @if (locations().length) {
+  @if (loading()) {
+    <div class="card">
+      <div class="empty">
+        <p>Loading…</p>
+      </div>
+    </div>
+  } @else if (error()) {
+    <div class="alert alert-error mb" role="alert">{{ error() }}</div>
+  } @else if (locations().length) {
     <ul class="grid">
       @for (loc of locations(); track loc.id) {
         <li class="card loc">

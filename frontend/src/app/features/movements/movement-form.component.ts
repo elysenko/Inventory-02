@@ -1,9 +1,18 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, computed, effect, inject, signal } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import { forkJoin } from 'rxjs';
+import { ApiError } from '../../core/api';
+import { ItemsService } from '../../core/items.service';
+import { LocationsService } from '../../core/locations.service';
+import { MovementPayload, MovementsService } from '../../core/movements.service';
 import { Item, ItemStockLevel, Location, MovementType } from '../../core/models';
+
+function messageOf(err: unknown): string {
+  return err instanceof ApiError ? err.message : 'Something went wrong. Please try again.';
+}
 
 @Component({
   selector: 'app-movement-form',
@@ -16,32 +25,20 @@ import { Item, ItemStockLevel, Location, MovementType } from '../../core/models'
 export class MovementFormComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly itemsApi = inject(ItemsService);
+  private readonly locationsApi = inject(LocationsService);
+  private readonly movementsApi = inject(MovementsService);
+  private readonly destroyRef = inject(DestroyRef);
 
-  readonly items = signal<Item[]>([
-    { id: 'i1', sku: 'SKU-001', name: 'Steel bracket M8', description: '', unit: 'ea', reorderAt: 40, totalQty: 26 },
-    { id: 'i2', sku: 'SKU-002', name: 'Hex bolt 12mm', description: '', unit: 'box', reorderAt: 20, totalQty: 84 },
-    { id: 'i3', sku: 'SKU-003', name: 'Packing tape 48mm', description: '', unit: 'roll', reorderAt: 60, totalQty: 12 },
-    { id: 'i5', sku: 'SKU-005', name: 'Corrugated box L', description: '', unit: 'ea', reorderAt: 200, totalQty: 640 },
-    { id: 'i8', sku: 'SKU-008', name: 'Forklift battery 48V', description: '', unit: 'ea', reorderAt: 4, totalQty: 3 },
-  ]);
+  readonly items = signal<Item[]>([]);
+  readonly locations = signal<Location[]>([]);
 
-  readonly locations = signal<Location[]>([
-    { id: 'l1', name: 'Zone A', zone: 'Receiving', itemCount: 4, totalQty: 312 },
-    { id: 'l2', name: 'Zone B', zone: 'Main racking', itemCount: 7, totalQty: 688 },
-    { id: 'l3', name: 'Zone C', zone: 'Dispatch', itemCount: 5, totalQty: 102 },
-  ]);
+  /** On-hand per (item, location) for the selected item — the informational hint only. */
+  readonly stockLevels = signal<ItemStockLevel[]>([]);
 
-  /** On-hand per (item, location) — drives the inline insufficient-stock guard. */
-  readonly stockLevels = signal<ItemStockLevel[]>([
-    { id: 's1', itemId: 'i1', locationId: 'l1', locationName: 'Zone A', zone: 'Receiving', qty: 6 },
-    { id: 's2', itemId: 'i1', locationId: 'l2', locationName: 'Zone B', zone: 'Main racking', qty: 14 },
-    { id: 's3', itemId: 'i1', locationId: 'l3', locationName: 'Zone C', zone: 'Dispatch', qty: 6 },
-    { id: 's4', itemId: 'i3', locationId: 'l2', locationName: 'Zone B', zone: 'Main racking', qty: 8 },
-    { id: 's5', itemId: 'i3', locationId: 'l3', locationName: 'Zone C', zone: 'Dispatch', qty: 4 },
-    { id: 's6', itemId: 'i5', locationId: 'l1', locationName: 'Zone A', zone: 'Receiving', qty: 240 },
-    { id: 's7', itemId: 'i5', locationId: 'l2', locationName: 'Zone B', zone: 'Main racking', qty: 400 },
-    { id: 's8', itemId: 'i8', locationId: 'l2', locationName: 'Zone B', zone: 'Main racking', qty: 3 },
-  ]);
+  readonly loading = signal(false);
+  readonly error = signal<string | null>(null);
+  readonly busy = signal(false);
 
   private readonly params = toSignal(this.route.queryParamMap, { requireSync: true });
 
@@ -60,9 +57,16 @@ export class MovementFormComponent {
   readonly serverError = signal<string | null>(null);
   readonly success = signal<string | null>(null);
 
+  /** Only the newest stock-level request may write to `stockLevels`. */
+  private stockTicket = 0;
+
   constructor() {
     const preset = this.params().get('itemId');
     if (preset) this.itemId.set(preset);
+
+    this.loadReference();
+    // Availability is per item, so the balances are refetched whenever it changes.
+    effect(() => this.loadStockLevels(this.itemId()));
   }
 
   readonly needsFrom = computed(() => this.type() === 'OUT' || this.type() === 'TRANSFER');
@@ -90,6 +94,8 @@ export class MovementFormComponent {
   }
 
   submit(): void {
+    if (this.busy()) return;
+
     this.submitted.set(true);
     this.success.set(null);
     this.serverError.set(null);
@@ -108,20 +114,77 @@ export class MovementFormComponent {
       return;
     }
 
-    // Mirrors the API's atomic guard: a debit can never drive a balance negative.
-    const onHand = this.available();
-    if (onHand !== null && qty > onHand) {
-      this.serverError.set(
-        `insufficient stock — only ${onHand} ${this.selectedItem()?.unit ?? 'units'} on hand at the selected location.`,
-      );
+    // Availability is deliberately not pre-checked here: the API applies the debit
+    // atomically, so its "insufficient stock" 400 is the only authoritative answer.
+    const payload: MovementPayload = { type: this.type(), itemId: this.itemId(), qty };
+    if (this.needsFrom()) payload.fromLocId = this.fromLocId();
+    if (this.needsTo()) payload.toLocId = this.toLocId();
+    const note = this.note().trim();
+    if (note) payload.note = note;
+
+    const item = this.selectedItem();
+    this.busy.set(true);
+    this.movementsApi
+      .create(payload)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.busy.set(false);
+          this.success.set(
+            `Recorded ${this.type()} of ${qty} ${item?.unit ?? 'units'} for ${item?.name ?? 'the item'}.`,
+          );
+          this.qty.set(null);
+          this.note.set('');
+          this.submitted.set(false);
+          // Balances have moved; refresh so the availability hint stays truthful.
+          this.loadStockLevels(this.itemId());
+        },
+        error: (err: unknown) => {
+          this.busy.set(false);
+          this.serverError.set(messageOf(err));
+        },
+      });
+  }
+
+  private loadReference(): void {
+    this.loading.set(true);
+    this.error.set(null);
+    forkJoin({ items: this.itemsApi.list(), locations: this.locationsApi.list() })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: ({ items, locations }) => {
+          this.items.set(items);
+          this.locations.set(locations);
+          this.loading.set(false);
+        },
+        error: (err: unknown) => {
+          this.items.set([]);
+          this.locations.set([]);
+          this.error.set(messageOf(err));
+          this.loading.set(false);
+        },
+      });
+  }
+
+  private loadStockLevels(itemId: string): void {
+    const current = ++this.stockTicket;
+    if (!itemId) {
+      this.stockLevels.set([]);
       return;
     }
-
-    this.success.set(
-      `Recorded ${this.type()} of ${qty} ${this.selectedItem()?.unit ?? 'units'} for ${this.selectedItem()?.name ?? 'the item'}.`,
-    );
-    this.qty.set(null);
-    this.note.set('');
-    this.submitted.set(false);
+    this.itemsApi
+      .stockLevels({ itemId })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (rows) => {
+          if (current !== this.stockTicket) return;
+          this.stockLevels.set(rows);
+        },
+        error: () => {
+          // A missing hint must never block recording a movement.
+          if (current !== this.stockTicket) return;
+          this.stockLevels.set([]);
+        },
+      });
   }
 }

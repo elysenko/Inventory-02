@@ -13,7 +13,17 @@
     environment variable is unset. Secrets are shown masked once saved.
   </div>
 
-  @if (services().length) {
+  @if (error()) {
+    <div class="alert alert-error mb" role="alert">{{ error() }}</div>
+  }
+
+  @if (loading()) {
+    <div class="card">
+      <div class="empty">
+        <p>Loading…</p>
+      </div>
+    </div>
+  } @else if (services().length) {
     <div class="stack">
       @for (svc of services(); track svc.service) {
         <section class="card">
@@ -57,7 +67,7 @@
         </section>
       }
     </div>
-  } @else {
+  } @else if (!error()) {
     <div class="card">
       <div class="empty">
         <span class="glyph" aria-hidden="true">⚙</span>

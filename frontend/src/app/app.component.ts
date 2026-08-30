@@ -62,11 +62,18 @@ export class AppComponent {
   toggleMore(): void { this.moreOpen.update((v) => !v); }
   toggleAccount(): void { this.accountOpen.update((v) => !v); }
 
+  /**
+   * Re-authenticates as the seeded account for that role. The role travels in the
+   * JWT, so flipping it client-side would show manager nav while the API answered
+   * 403 — this keeps the UI and the server's view of the caller in agreement.
+   */
   switchRole(role: Role): void {
-    this.auth.setRole(role);
     this.accountOpen.set(false);
     this.moreOpen.set(false);
-    this.router.navigate(['/items']);
+    this.auth.previewAs(role).subscribe({
+      next: () => this.router.navigate(['/items']),
+      error: () => this.auth.logout(),
+    });
   }
 
   logout(): void {

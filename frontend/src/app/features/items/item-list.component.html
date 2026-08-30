@@ -28,7 +28,15 @@
       </div>
     </div>
 
-    @if (visible().length) {
+    @if (error()) {
+      <div class="alert alert-error mb" role="alert">{{ error() }}</div>
+    }
+
+    @if (loading()) {
+      <div class="empty">
+        <p>Loading…</p>
+      </div>
+    } @else if (visible().length) {
       <div class="table-wrap desktop-only">
         <table class="data">
           <thead>
@@ -86,7 +94,7 @@
           </li>
         }
       </ul>
-    } @else {
+    } @else if (!error()) {
       <div class="empty">
         <span class="glyph" aria-hidden="true">▦</span>
         <h3>No items match</h3>

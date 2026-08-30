@@ -3,26 +3,32 @@ import { CanActivateFn, Router } from '@angular/router';
 import { AuthService } from './auth.service';
 
 /**
- * Preview contract: a cold load of an authenticated route renders that route
- * rather than bouncing to /login, so every screen stays deep-linkable. Each
- * guard resolves to `true` after seeding — it never redirects, so no guard
- * can enter a redirect loop with the shell.
+ * Real sessions now, so an unauthenticated deep link goes to /login carrying the
+ * URL it wanted — the login page sends the user straight back after sign-in
+ * rather than dropping them on the catalog.
  */
-export const authGuard: CanActivateFn = () => {
-  inject(AuthService).ensureSession();
-  return true;
+export const authGuard: CanActivateFn = (_route, state) => {
+  const auth = inject(AuthService);
+  if (auth.isAuthenticated()) return true;
+  return inject(Router).createUrlTree(['/login'], { queryParams: { returnUrl: state.url } });
 };
 
 /** Manager-only routes. Clerks are sent back to the catalog exactly once. */
-export const managerGuard: CanActivateFn = () => {
+export const managerGuard: CanActivateFn = (route, state) => {
   const auth = inject(AuthService);
-  auth.ensureSession();
-  return auth.isManager() ? true : inject(Router).createUrlTree(['/items']);
+  const router = inject(Router);
+  if (!auth.isAuthenticated()) {
+    return router.createUrlTree(['/login'], { queryParams: { returnUrl: state.url } });
+  }
+  return auth.isManager() ? true : router.createUrlTree(['/items']);
 };
 
 /** Admin-only routes (/admin/settings). */
-export const adminGuard: CanActivateFn = () => {
+export const adminGuard: CanActivateFn = (route, state) => {
   const auth = inject(AuthService);
-  auth.ensureSession();
-  return auth.isAdmin() ? true : inject(Router).createUrlTree(['/items']);
+  const router = inject(Router);
+  if (!auth.isAuthenticated()) {
+    return router.createUrlTree(['/login'], { queryParams: { returnUrl: state.url } });
+  }
+  return auth.isAdmin() ? true : router.createUrlTree(['/items']);
 };

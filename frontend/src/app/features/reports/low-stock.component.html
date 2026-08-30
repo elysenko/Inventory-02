@@ -14,7 +14,15 @@
     </div>
   </div>
 
-  @if (rows().length) {
+  @if (loading()) {
+    <div class="card">
+      <div class="empty">
+        <p>Loading…</p>
+      </div>
+    </div>
+  } @else if (error()) {
+    <div class="alert alert-error mb" role="alert">{{ error() }}</div>
+  } @else if (rows().length) {
     <div class="summary">
       <div class="summary-card">
         <span class="summary-label">Items to reorder</span>

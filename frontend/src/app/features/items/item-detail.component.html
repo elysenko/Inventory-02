@@ -1,6 +1,10 @@
 <div class="page">
   <a class="back" routerLink="/items">‹ Back to catalog</a>
 
+  @if (error()) {
+    <div class="alert alert-error mb" role="alert">{{ error() }}</div>
+  }
+
   @if (item(); as it) {
     <div class="page-head">
       <div>
@@ -126,7 +130,13 @@
         }
       }
     </div>
-  } @else {
+  } @else if (loading()) {
+    <div class="card">
+      <div class="empty">
+        <p>Loading…</p>
+      </div>
+    </div>
+  } @else if (!error()) {
     <div class="card">
       <div class="empty">
         <span class="glyph" aria-hidden="true">▦</span>
@@ -139,5 +149,6 @@
 </div>
 
 @if (modal() === 'edit' && auth.isManager() && item()) {
-  <app-item-form mode="edit" [item]="item()" (save)="saveEdit($event)" (cancel)="closeModal()" />
+  <app-item-form mode="edit" [item]="item()" [serverError]="formError()"
+                 (save)="saveEdit($event)" (cancel)="closeModal()" />
 }

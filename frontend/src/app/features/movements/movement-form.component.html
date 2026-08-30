@@ -32,6 +32,15 @@
         </div>
       </div>
 
+      @if (error()) {
+        <div class="alert alert-error mb" role="alert">{{ error() }}</div>
+      }
+      @if (loading()) {
+        <div class="empty">
+          <p>Loading…</p>
+        </div>
+      }
+
       @if (serverError()) {
         <div class="alert alert-error mt" role="alert">{{ serverError() }}</div>
       }
@@ -53,7 +62,7 @@
             }
           </select>
           @if (submitted() && !itemId()) { <span class="error-text">Choose the item being moved.</span> }
-          @if (items().length === 0) { <span class="hint">No items in the catalog yet.</span> }
+          @if (!loading() && !error() && items().length === 0) { <span class="hint">No items in the catalog yet.</span> }
         </div>
 
         @if (needsFrom()) {
