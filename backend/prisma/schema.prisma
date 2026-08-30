@@ -7,16 +7,118 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  name      String?
-  role      Role     @default(USER)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
+// ─── Enums ────────────────────────────────────────────────────────────────────
 
 enum Role {
   USER
+  CLERK
+  MANAGER
   ADMIN
+}
+
+enum MovementType {
+  IN
+  OUT
+  TRANSFER
+}
+
+// ─── Identity ─────────────────────────────────────────────────────────────────
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  name         String?
+  passwordHash String?
+  role         Role     @default(USER)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  movements Movement[]
+}
+
+// ─── Catalog ──────────────────────────────────────────────────────────────────
+
+model Item {
+  id          String   @id @default(uuid())
+  sku         String   @unique
+  name        String
+  description String   @default("")
+  unit        String   @default("ea")
+  reorderAt   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  stockLevels StockLevel[]
+  movements   Movement[]
+
+  @@index([name])
+}
+
+model Location {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  zone      String   @default("")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  stockLevels   StockLevel[]
+  movementsFrom Movement[]   @relation("MovementFromLocation")
+  movementsTo   Movement[]   @relation("MovementToLocation")
+
+  @@index([zone])
+}
+
+// ─── Balances ─────────────────────────────────────────────────────────────────
+
+// One row per (item, location). The @@unique is load-bearing: it is what makes
+// the movement service's atomic upsert + conditional decrement possible.
+model StockLevel {
+  id         String   @id @default(uuid())
+  itemId     String
+  locationId String
+  qty        Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  item     Item     @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  location Location @relation(fields: [locationId], references: [id], onDelete: Cascade)
+
+  @@unique([itemId, locationId])
+  @@index([locationId])
+}
+
+// ─── Audit log ────────────────────────────────────────────────────────────────
+
+// Immutable audit trail. All relations are Restrict so history can never be
+// orphaned or silently destroyed by an item/location/user delete.
+model Movement {
+  id        String       @id @default(uuid())
+  type      MovementType
+  itemId    String
+  fromLocId String?
+  toLocId   String?
+  qty       Int
+  note      String?
+  userId    String
+  createdAt DateTime     @default(now())
+
+  item    Item      @relation(fields: [itemId], references: [id], onDelete: Restrict)
+  fromLoc Location? @relation("MovementFromLocation", fields: [fromLocId], references: [id], onDelete: Restrict)
+  toLoc   Location? @relation("MovementToLocation", fields: [toLocId], references: [id], onDelete: Restrict)
+  user    User      @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@index([itemId])
+  @@index([createdAt])
+  @@index([type])
+  @@index([itemId, createdAt])
+}
+
+// ─── Runtime config ───────────────────────────────────────────────────────────
+
+// Runtime override layer for service credentials. resolveConfig() reads the env
+// var first and falls back to this table.
+model SystemSetting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
 }
